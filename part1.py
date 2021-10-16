@@ -4,7 +4,7 @@ from LogisticRegression import *
 
 def grid_search_LR(train: np.ndarray,
                    val: np.ndarray,
-                   ranges: Dict[str, List[Any]],
+                   param_spaces: List[Dict[str, List[Any]]],
                    measure: Callable[[np.ndarray, np.ndarray], float],
                    report_train: bool = False,
                    report_val: bool = False,
@@ -18,7 +18,7 @@ def grid_search_LR(train: np.ndarray,
     performance report of all parameter combinations on training or validation set.
     :param train: the training set
     :param val: the validation set
-    :param ranges: a dictionary containing parameter names as keys, and ranges of parameter values as values
+    :param param_spaces: a dictionary containing parameter names as keys, and ranges of parameter values as values
     :param measure: the measure to optimize for. The higher the measure, the better the model.
     :param report_train: whether to report the performance of each combination on the training set. If false,
     the third return value will be None.
@@ -39,7 +39,9 @@ def grid_search_LR(train: np.ndarray,
     best_score = float('-inf')
     best_params = None
     best_pred = None
-    combinations = get_parameter_combinations(ranges)
+    combinations = []
+    for param_space in param_spaces:
+        combinations += get_parameter_combinations(param_space)
 
     train_labels = train[:, -1].astype(int)
     val_labels = val[:, -1].astype(int)
@@ -48,6 +50,8 @@ def grid_search_LR(train: np.ndarray,
     val_reports = [] if report_val else None
     convergence_paths = [] if record_convergence_paths else None
     for combination in tqdm(combinations):
+        if verbose:
+            print(f"Trying combination {combination}")
         clf = LogisticRegression(**combination)
 
         clf.fit(train[:, :-1], train_labels)
@@ -66,6 +70,9 @@ def grid_search_LR(train: np.ndarray,
             best_score = score
             best_params = combination
             best_pred = val_pred
+        if verbose:
+            print(f"score: {score}, \
+            {'converged' if clf.converged() else 'not converged, gradient '+str(float(np.linalg.norm(clf.last_gradient)))}")
 
     return best_params, best_pred, training_reports, val_reports, convergence_paths
 
@@ -79,12 +86,24 @@ if __name__=='__main__':
     validation = read(validation_path)
 
     pipeline = [preprocess_scale]
-    param_space = {'max_epoch': [100, 200], 'learning_rate': [0.1, 0.01]}
+    space1 = {'max_epoch': [1000],
+              'learning_rate': [0.01, 0.001],
+              'penalty': ['l2', 'l1'],
+              'lambdaa': [0.1, 0.01],
+              'batch_size': [float('inf'), 16, 256],
+              'momentum': [0, 0.5, 0.9]
+              }
+    space2 = {'max_epoch': [100000],
+              'learning_rate': [0.001],
+              'penalty': [None],
+              'batch_size': [float('inf')],
+              'momentum': [0]
+              }
     train_processed, val_processed = preprocess(training, validation, pipeline)
     best_params, best_pred, _, _, paths = grid_search_LR(train=train_processed,
                                                          val=val_processed,
-                                                         ranges=param_space,
+                                                         param_spaces=[space1],
                                                          measure=accuracy,
-                                                         record_convergence_paths=True
-                                                         )
+                                                         record_convergence_paths=True,
+                                                         verbose=True)
 

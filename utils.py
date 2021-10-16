@@ -128,7 +128,7 @@ def preprocess(train: np.ndarray,
 
 def grid_search_pipelines(train: np.ndarray,
                           val: np.ndarray,
-                          ranges: Dict[str, List[Any]],
+                          param_spaces: List[Dict[str, List[Any]]],
                           pipelines: Dict[str, Tuple[Pipeline, Vectorizer]],
                           measure: Callable[[np.ndarray, np.ndarray], float],
                           search_method = Any,
@@ -139,7 +139,7 @@ def grid_search_pipelines(train: np.ndarray,
     Compare preprocessing pipelines using grid search
     :param train: the training set
     :param val: the validation set
-    :param ranges: the ranges of hyperparameters for the logistic regression model
+    :param param_spaces: the ranges of hyperparameters for the logistic regression model
     :param pipelines: pipelines to be compared. Each come with a name and a specified vectorizer
     :param measure: the measure used for comparing. The higher, the better.
     :param search_method: the function used to search over parameter ranges
@@ -157,7 +157,7 @@ def grid_search_pipelines(train: np.ndarray,
         train_processed, val_processed = preprocess(train, val, pipeline, vectorizer)
         best_params, val_pred, _, _ = search_method(train_processed,
                                                     val_processed,
-                                                    ranges,
+                                                    param_spaces,
                                                     measure)
         score = measure(val_pred, val_processed[:, -1])
         if report:
@@ -165,6 +165,8 @@ def grid_search_pipelines(train: np.ndarray,
         if score > best_score:
             best_score = score
             best_pipeline = name
+        if verbose:
+            print(f"Pipeline: {name}, score: {score}, params: {best_params}")
 
         searched_params[name] = best_params
     return best_pipeline, best_score, searched_params, pipeline_reports
