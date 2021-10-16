@@ -1,19 +1,11 @@
-import pandas as pd
-import numpy as np
-from utils import get_parameter_combinations, read, accuracy_score, fit_scaler, scale
+from utils import *
+from measures import *
 
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import classification_report
 from nltk.stem import WordNetLemmatizer
 from nltk.stem import SnowballStemmer
 from nltk.corpus import stopwords
 
-from typing import List, Tuple, Callable, Dict, Any, Union, Optional, Iterable
-from tqdm import tqdm
-
-Vectorizer = Union[TfidfVectorizer, CountVectorizer]
 
 
 # region preprocessing
@@ -68,7 +60,7 @@ def build_vectorizer(type: str = "count",
 
 def preprocess_vectorize(train: np.ndarray,
                          test: np.ndarray,
-                         vectorizer: Vectorizer
+                         vectorizer: Vectorizer = None,
                          ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Transform the data by the given vectorizer
@@ -77,6 +69,8 @@ def preprocess_vectorize(train: np.ndarray,
     :param vectorizer: the vectorizer
     :return: transformed data
     """
+    if not vectorizer:
+        vectorizer = build_vectorizer()
     x = train[:, 0]
     y = train[:, -1, np.newaxis]
     x = vectorizer.fit_transform(x).toarray()
@@ -87,46 +81,6 @@ def preprocess_vectorize(train: np.ndarray,
     x = vectorizer.transform(x).toarray()
     test = np.append(x, y, axis=1)
     return train, test
-
-
-def preprocess_scale(train: np.ndarray,
-                     test: np.ndarray,
-                     vectorizer: Vectorizer
-                     ) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Scale the data using standard scaling. The vectorizer parameter is ignored
-    :param train: the training set to be scaled
-    :param test: the test set to be scaled
-    :param vectorizer: ignored
-    :return: scaled data
-    """
-    scaler = fit_scaler(train)
-    train = scale(train, scaler)
-    test = scale(test, scaler)
-    return train, test
-
-
-Pipeline = List[Callable[[np.ndarray, np.ndarray, Vectorizer], Tuple[np.ndarray, np.ndarray]]]
-
-
-def preprocess(train: np.ndarray,
-               test: np.ndarray,
-               pipeline: Pipeline,
-               vectorizer: Vectorizer = None,
-               ) -> Tuple[np.ndarray, np.ndarray]:
-    '''
-    Preprocess the dataset given a pipeline of preprocessing
-    :param train: the training set
-    :param test: the test or validation set
-    :param pipeline: the steps of preprocessing to be applied sequentially
-    :param vectorizer: the vectorizer that turns text into feature vectors
-    :return: the data with preprocessed features and labels
-    '''
-    for step in pipeline:
-        train, test = step(train, test, vectorizer)
-    return train, test
-
-# endregion
 
 
 def grid_search_LR(train: np.ndarray,
@@ -189,47 +143,6 @@ def grid_search_LR(train: np.ndarray,
     return best_params, best_pred, training_reports, val_reports
 
 
-def grid_search_pipelines(train: np.ndarray,
-                          val: np.ndarray,
-                          ranges: Dict[str, List[Any]],
-                          pipelines: Dict[str, Tuple[Pipeline, Vectorizer]],
-                          measure: Callable[[np.ndarray, np.ndarray], float],
-                          report: Callable[[np.ndarray, np.ndarray], Any] = None,
-                          verbose: bool = False
-                          ) -> Tuple[Optional[str], float, Dict[str, Dict[str, Any]], Dict[str, Any]]:
-    """
-    Compare preprocessing pipelines using grid search
-    :param train: the training set
-    :param val: the validation set
-    :param ranges: the ranges of hyperparameters for the logistic regression model
-    :param pipelines: pipelines to be compared. Each come with a name and a specified vectorizer
-    :param measure: the measure used for comparing. The higher, the better.
-    :param report: optional callable used to report the best performance for each pipeline. If not specified, the fourth
-    return value will be None
-    :param verbose: whether to print messages
-    :return: A four tuple. The first is the name of the best pipeline, and the second is its score. The third is the
-    best hyperparameters for each pipeline. The fourth is the best performance report for each pipeline
-    """
-    best_score = float('-inf')
-    best_pipeline = None
-    searched_params = {}
-    pipeline_reports = None if report else {}
-    for name, (pipeline, vectorizer) in pipelines.items():
-        train_processed, val_processed = preprocess(train, val, pipeline, vectorizer)
-        best_params, val_pred, _, _ = grid_search_LR(train_processed,
-                                                     val_processed,
-                                                     ranges,
-                                                     measure)
-        score = measure(val_pred, val_processed[:, -1])
-        if report:
-            pipeline_reports[name] = report(val_pred, val_processed[:, -1])
-        if score > best_score:
-            best_score = score
-            best_pipeline = name
-
-        searched_params[name] = best_params
-    return best_pipeline, best_score, searched_params, pipeline_reports
-
 if __name__=='__main__':
     training_path = "data_A2/fake_news/fake_news_train.csv"
     test_path = "data_A2/fake_news/fake_news_test.csv"
@@ -247,10 +160,11 @@ if __name__=='__main__':
             preprocess_vectorize,
                ], vec),
     }
-    best_pipeline, best_score, searched_params, _ = grid_search_pipelines(training,
-                                                                          validation,
-                                                                          params_ranges,
-                                                                          pipelines,
-                                                                          accuracy_score)
+    best_pipeline, best_score, searched_params, _ = grid_search_pipelines(train=training,
+                                                                          val=validation,
+                                                                          ranges=params_ranges,
+                                                                          pipelines=pipelines,
+                                                                          measure=accuracy_score,
+                                                                          search_method=grid_search_LR)
 
 
