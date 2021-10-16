@@ -191,6 +191,20 @@ class LogisticRegression(object):
 
         # print(y_hat)
         return sum(y_hat == y_test) / len(y_hat)
+    def description(self):
+        # add_bias = True,
+        # learning_rate = 1e-4,
+        # epsilon = 1e-4,
+        # max_epoch = 1000,
+        # verbose = False,
+        # batch_size = 1,
+        # momentum = 0,
+        # reset_each_time = True
+        print(f"LogisticRegression model with batchingsize = {self.batch_size}, bias = {self.add_bias}, epsilon, = {self.epsilon}"
+              f"learning rate = {self.learning_rate}, max_epoch = {self.max_epoch}, momentum = {self.momentum}, reset each time = {self.reset_each_time}"
+        )
+
+
 
     def __repr__(self):
         return "LogisticRegression()"
