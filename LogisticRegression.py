@@ -1,5 +1,5 @@
 from measures import *
-
+from tqdm import tqdm
 
 class LogisticRegression(object):
 
@@ -35,9 +35,8 @@ class LogisticRegression(object):
         self.accuracy_history = []
 
     def gradient(self, x, y):
-        logistic = lambda z: 1. / (1 + np.exp(-z))  # logistic function
         N, D = x.shape
-        yh = logistic(np.dot(x, self.theta))  # predictions  size N
+        yh = logistic(np.dot(x, self.theta).astype(float))  # predictions  size N
         grad = np.dot(x.T, yh - y) / N  # divide by N because cost is mean over N points
         if self.penalty == 'l1':
             grad[1:] += self.lambdaa * np.sign(self.theta[1:])
@@ -84,7 +83,6 @@ class LogisticRegression(object):
         if self.reset_each_time:
             self.reset()
         # mini-batch ->
-        logistic = lambda z: 1. / (1 + np.exp(-z))  # logistic function
         if x.ndim == 1:
             x = x[:, None]
 
@@ -171,7 +169,6 @@ class LogisticRegression(object):
         return J
 
     def predict(self, x):
-        logistic = lambda z: 1. / (1 + np.exp(-z))  # logistic function
         if x.ndim == 1:
             x = x[:, None]
         Nt = x.shape[0]
@@ -210,5 +207,5 @@ class LogisticRegression(object):
         return "LogisticRegression()"
 #  Momentnum
 
-
+logistic = lambda z: 1. / (1 + np.exp(-z))
 

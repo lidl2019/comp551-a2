@@ -1,7 +1,8 @@
 from utils import *
 from measures import *
 
-from sklearn.linear_model import LogisticRegression
+#from sklearn.linear_model import LogisticRegression
+from LogisticRegression import *
 from nltk.stem import WordNetLemmatizer
 from nltk.stem import SnowballStemmer
 from nltk.corpus import stopwords
@@ -73,18 +74,18 @@ def preprocess_vectorize(train: np.ndarray,
     x = train[:, 0]
     y = train[:, -1, np.newaxis]
     x = vectorizer.fit_transform(x).toarray()
-    train = np.append(x, y, axis=1)
+    train = np.append(x, y, axis=1).astype(float)
 
     x = test[:, 0]
     y = test[:, -1, np.newaxis]
     x = vectorizer.transform(x).toarray()
-    test = np.append(x, y, axis=1)
+    test = np.append(x, y, axis=1).astype(float)
     return train, test
 
 
 def grid_search_LR(train: np.ndarray,
                    val: np.ndarray,
-                   ranges: Dict[str, List[Any]],
+                   param_spaces: List[Dict[str, List[Any]]],
                    measure: Callable[[np.ndarray, np.ndarray], float],
                    report_train: bool = False,
                    report_val: bool = False,
@@ -96,7 +97,7 @@ def grid_search_LR(train: np.ndarray,
         performance report of all parameter combinations on training or validation set.
         :param train: the training set
         :param val: the validation set
-        :param ranges: a dictionary containing parameter names as keys, and ranges of parameter values as values
+        :param param_spaces: a dictionary containing parameter names as keys, and ranges of parameter values as values
         :param measure: the measure to optimize for. The higher the measure, the better the model.
         :param report_train: whether to report the performance of each combination on the training set. If false,
         the third return value will be None.
@@ -116,7 +117,9 @@ def grid_search_LR(train: np.ndarray,
     best_score = float('-inf')
     best_params = None
     best_pred = None
-    combinations = get_parameter_combinations(ranges)
+    combinations = []
+    for param_space in param_spaces:
+        combinations += get_parameter_combinations(param_space)
 
     train_labels = train[:,-1].astype(int)
     val_labels = val[:,-1].astype(int)
@@ -124,6 +127,8 @@ def grid_search_LR(train: np.ndarray,
     training_reports = []
     val_reports = []
     for combination in tqdm(combinations):
+        if verbose:
+            print(f"Trying combination {combination}")
         clf = LogisticRegression(**combination)
 
         clf.fit(train[:, :-1], train_labels)
@@ -138,6 +143,9 @@ def grid_search_LR(train: np.ndarray,
             best_score = score
             best_params = combination
             best_pred = val_pred
+        if verbose:
+            print(f"score: {score}, \
+            {'converged' if clf.converged() else 'not converged, gradient ' + str(float(np.linalg.norm(clf.last_gradient)))}")
 
     return best_params, best_pred, training_reports, val_reports
 
@@ -148,20 +156,36 @@ if __name__=='__main__':
     validation_path = "data_A2/fake_news/fake_news_val.csv"
     training = read(training_path)
     validation = read(validation_path)
-    vec = build_vectorizer(max_features=6000)
-    params_ranges = {'max_iter': [100, 200]}
+
+    space1 = {'max_epoch': [500],
+              'learning_rate': [0.05, 0.001],
+              'penalty': ['l2', 'l1'],
+              'lambdaa': [0.1, 0.01],
+              'batch_size': [float('inf'), 1024],
+              'momentum': [0, 0.9]
+              }
+    space2 = {'max_epoch': [500],
+              'learning_rate': [0.05, 0.001],
+              'penalty': [None],
+              'batch_size': [float('inf'), 1024],
+              'momentum': [0, 0.9]
+              }
+
     pipelines = {
+
         'p1': ([
-            preprocess_vectorize,
-            preprocess_scale
-               ], vec),
+                   preprocess_vectorize,
+               ], build_vectorizer(max_features=10000, type='tfidf', normalization='lemmatization', ngram_range=(1, 2))),
         'p2': ([
-            preprocess_vectorize,
-               ], vec),
+                   preprocess_vectorize,
+               ], build_vectorizer(max_features=10000, type='tfidf', normalization='stemming', ngram_range=(1, 2))),
+        'p3': ([
+                   preprocess_vectorize,
+               ], build_vectorizer(max_features=10000, type='tfidf', normalization='stemming', ngram_range=(1, 3))),
     }
     best_pipeline, best_score, searched_params, _ = grid_search_pipelines(train=training,
                                                                           val=validation,
-                                                                          ranges=params_ranges,
+                                                                          param_spaces=[space1, space2],
                                                                           pipelines=pipelines,
                                                                           measure=accuracy,
                                                                           search_method=grid_search_LR)
