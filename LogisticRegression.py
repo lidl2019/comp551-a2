@@ -4,8 +4,15 @@ from metrics import *
 
 class LogisticRegression(object):
 
-    def __init__(self, add_bias=True, learning_rate=.1, epsilon=1e-4, max_epoch=1000, verbose=False, batch_size=1,
-                 momentum=0):
+    def __init__(self, add_bias=True,
+                 learning_rate=1e-4,
+                 epsilon=1e-4,
+                 max_epoch=1000,
+                 verbose=False,
+                 batch_size=1,
+                 momentum=0,
+                 reset_each_time = True
+                 ):
         self.add_bias = add_bias
         self.learning_rate = learning_rate
         self.epsilon = epsilon  # to get the tolerance for the norm of gradients
@@ -16,7 +23,17 @@ class LogisticRegression(object):
         self.theta = None
         self.is_converged = False
         self.gradient_history = []
-        self.accurcy_history = []
+        self.accuracy_history = []
+        self.reset_each_time = reset_each_time
+    def reset(self):
+
+        self.theta = None
+        self.is_converged = False
+        self.gradient_history = []
+        self.accuracy_history = []
+
+
+
 
     def gradient(self, x, y):
         logistic = lambda z: 1. / (1 + np.exp(-z))  # logistic function
@@ -61,12 +78,14 @@ class LogisticRegression(object):
         return new_x, new_y
 
     def fit(self, x, y):
+        if self.reset_each_time:
+            self.reset()
         # mini-batch ->
         logistic = lambda z: 1. / (1 + np.exp(-z))  # logistic function
         if x.ndim == 1:
             x = x[:, None]
 
-        print(f'GSLOLOKOKO: {x.shape}\n')
+        # print(f'GSLOLOKOKO: {x.shape}\n')
 
         if self.add_bias:
             N = x.shape[0]
@@ -74,7 +93,7 @@ class LogisticRegression(object):
         #     add bias
 
         N, D = x.shape
-        print(f'GUTEN TAG: {(N, D)}\n')
+        # print(f'GUTEN TAG: {(N, D)}\n')
         self.theta = np.zeros(D)
         cur_gradient = np.inf
         # inital_gradient
@@ -83,7 +102,7 @@ class LogisticRegression(object):
         # the code snippet below is for gradient descent
         # get the batched data from split_data
         init_acc = self.accuracy(x, y)
-        self.accurcy_history.append(init_acc)
+        self.accuracy_history.append(init_acc)
 
         if self.verbose:
             print("current batch_size = {}".format(self.batch_size))
@@ -123,7 +142,7 @@ class LogisticRegression(object):
             if self.verbose:
                 print("current accuracy = {}".format(cur_acc))
                 print("————————————————————————————————————————————————————————————————————————————————")
-            self.accurcy_history.append(cur_acc)
+            self.accuracy_history.append(cur_acc)
 
             epoch += 1
 
@@ -138,9 +157,11 @@ class LogisticRegression(object):
     def converged(self):
         return self.is_converged
 
-    def convergece_path(self):
-        #
-        pass
+    def convergence_path(self, index):
+
+        # index : the number of epoch
+        # return the accuracy after the training of the index epoch as an array
+        return self.accuracy_history[:index]
 
     def cost_fn(self, x, y, w):
         N, D = x.shape
