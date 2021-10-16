@@ -188,6 +188,7 @@ if __name__=='__main__':
                                                                           param_spaces=[space1, space2],
                                                                           pipelines=pipelines,
                                                                           measure=accuracy,
-                                                                          search_method=grid_search_LR)
+                                                                          search_method=grid_search_LR,
+                                                                          verbose=True)
 
 

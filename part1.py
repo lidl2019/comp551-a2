@@ -85,15 +85,21 @@ if __name__=='__main__':
     test = read(test_path)
     validation = read(validation_path)
 
-    pipeline = [preprocess_scale]
-    space1 = {'max_epoch': [1000],
-              'learning_rate': [0.01, 0.001],
+    pipeline = []
+    space1 = {'max_epoch': [10000],
+              'learning_rate': [0.001],
               'penalty': ['l2', 'l1'],
               'lambdaa': [0.1, 0.01],
               'batch_size': [float('inf'), 16, 256],
-              'momentum': [0, 0.5, 0.9]
+              'momentum': [0, 0.99, 0.9]
               }
-    space2 = {'max_epoch': [100000],
+    space2 = {'max_epoch': [10000],
+              'learning_rate': [0.001],
+              'penalty': [None],
+              'batch_size': [float('inf')],
+              'momentum': [0]
+              }
+    space3 = {'max_epoch': [1000000],
               'learning_rate': [0.001],
               'penalty': [None],
               'batch_size': [float('inf')],
