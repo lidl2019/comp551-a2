@@ -4,3 +4,7 @@
 .ipynb_checkpoints
 __pycache__
 test.py
+
+report/*
+!report/writeup.tex
+!report/writeup.pdf
