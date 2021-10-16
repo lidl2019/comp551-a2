@@ -12,7 +12,7 @@ def grid_search_LR(train: np.ndarray,
                    verbose: bool = False,
                    force_convergence: bool = False,
                    record_convergence_paths: bool = False,
-                   ) -> Tuple[Dict[str, Any], np.ndarray, List[Tuple], List[Tuple], List[Tuple]]:
+                   ) -> Tuple[Dict[str, Any], float, List[Tuple], List[Tuple], List[Tuple]]:
     '''
     Finds the best choice of hyperparameters, given the range of values of each parameter. Optionally returns the
     performance report of all parameter combinations on training or validation set.
@@ -30,7 +30,7 @@ def grid_search_LR(train: np.ndarray,
     :param force_convergence: If true, then classifiers that fail to converge will not be considered.
     :param record_convergence_paths: The accuracy on the training set after each epoch. If false, the fifth
      return value will be None.
-    :return: A five tuple. The first is the best combination of parameters, and the second is its predictions
+    :return: A five tuple. The first is the best combination of parameters, and the second is its score
     on the validation set. The third is a list of each parameter combination and its report on the training set.
     The fourth return value is the counterpart of the third for validation set.
     The fifth return value is the convergence path for each combination of parameters.
@@ -38,7 +38,6 @@ def grid_search_LR(train: np.ndarray,
 
     best_score = float('-inf')
     best_params = None
-    best_pred = None
     combinations = []
     for param_space in param_spaces:
         combinations += get_parameter_combinations(param_space)
@@ -69,12 +68,11 @@ def grid_search_LR(train: np.ndarray,
         if score > best_score:
             best_score = score
             best_params = combination
-            best_pred = val_pred
         if verbose:
             print(f"score: {score}, \
             {'converged' if clf.converged() else 'not converged, gradient '+str(float(np.linalg.norm(clf.last_gradient)))}")
 
-    return best_params, best_pred, training_reports, val_reports, convergence_paths
+    return best_params, best_score, training_reports, val_reports, convergence_paths
 
 
 if __name__=='__main__':
@@ -106,7 +104,7 @@ if __name__=='__main__':
               'momentum': [0]
               }
     train_processed, val_processed = preprocess(training, validation, pipeline)
-    best_params, best_pred, _, _, paths = grid_search_LR(train=train_processed,
+    best_params, best_score, _, _, paths = grid_search_LR(train=train_processed,
                                                          val=val_processed,
                                                          param_spaces=[space1],
                                                          measure=accuracy,

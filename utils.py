@@ -132,7 +132,6 @@ def grid_search_pipelines(train: np.ndarray,
                           pipelines: Dict[str, Tuple[Pipeline, Vectorizer]],
                           measure: Callable[[np.ndarray, np.ndarray], float],
                           search_method = Any,
-                          report: Callable[[np.ndarray, np.ndarray], Any] = None,
                           verbose: bool = False
                           ) -> Tuple[Optional[str], float, Dict[str, Dict[str, Any]], Dict[str, Any]]:
     """
@@ -143,31 +142,27 @@ def grid_search_pipelines(train: np.ndarray,
     :param pipelines: pipelines to be compared. Each come with a name and a specified vectorizer
     :param measure: the measure used for comparing. The higher, the better.
     :param search_method: the function used to search over parameter ranges
-    :param report: optional callable used to report the best performance for each pipeline. If not specified, the fourth
-    return value will be None
     :param verbose: whether to print messages
     :return: A four tuple. The first is the name of the best pipeline, and the second is its score. The third is the
-    best hyperparameters for each pipeline. The fourth is the best performance report for each pipeline
+    best hyperparameters for each pipeline. The fourth is the best score for each pipeline
     """
     best_score = float('-inf')
     best_pipeline = None
     searched_params = {}
-    pipeline_reports = None if report else {}
+    pipeline_scores = None if report else {}
     for name, (pipeline, vectorizer) in pipelines.items():
         train_processed, val_processed = preprocess(train, val, pipeline, vectorizer)
-        best_params, val_pred, _, _ = search_method(train_processed,
+        best_params, score, _, _ = search_method(train_processed,
                                                     val_processed,
                                                     param_spaces,
                                                     measure)
-        score = measure(val_pred, val_processed[:, -1])
-        if report:
-            pipeline_reports[name] = report(val_pred, val_processed[:, -1])
         if score > best_score:
             best_score = score
             best_pipeline = name
         if verbose:
             print(f"Pipeline: {name}, score: {score}, params: {best_params}")
-
+        pipeline_scores[name] = score
         searched_params[name] = best_params
-    return best_pipeline, best_score, searched_params, pipeline_reports
+
+    return best_pipeline, best_score, searched_params, pipeline_scores
 

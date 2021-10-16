@@ -91,7 +91,7 @@ def grid_search_LR(train: np.ndarray,
                    report_val: bool = False,
                    report: Callable[[np.ndarray, np.ndarray], Any] = None,
                    verbose: bool = False
-                   ) -> Tuple[Dict[str, Any], np.ndarray, List[Any], List[Any]]:
+                   ) -> Tuple[Dict[str, Any], float, List[Any], List[Any]]:
     '''
         Finds the best choice of hyperparameters, given the range of values of each parameter. Optionally returns the
         performance report of all parameter combinations on training or validation set.
@@ -116,7 +116,6 @@ def grid_search_LR(train: np.ndarray,
         '''
     best_score = float('-inf')
     best_params = None
-    best_pred = None
     combinations = []
     for param_space in param_spaces:
         combinations += get_parameter_combinations(param_space)
@@ -142,12 +141,11 @@ def grid_search_LR(train: np.ndarray,
         if score > best_score:
             best_score = score
             best_params = combination
-            best_pred = val_pred
         if verbose:
             print(f"score: {score}, \
             {'converged' if clf.converged() else 'not converged, gradient ' + str(float(np.linalg.norm(clf.last_gradient)))}")
 
-    return best_params, best_pred, training_reports, val_reports
+    return best_params, best_score, training_reports, val_reports
 
 
 if __name__=='__main__':
