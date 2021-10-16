@@ -10,7 +10,9 @@ class LogisticRegression(object):
                  verbose=False,
                  batch_size=1,
                  momentum=0,
-                 reset_each_time = True
+                 reset_each_time = True,
+                 penalty=None,
+                 lambdaa=1
                  ):
         self.add_bias = add_bias
         self.learning_rate = learning_rate
@@ -24,6 +26,9 @@ class LogisticRegression(object):
         self.gradient_history = []
         self.accuracy_history = []
         self.reset_each_time = reset_each_time
+        self.penalty = penalty
+        self.lambdaa = lambdaa
+
     def reset(self):
 
         self.theta = None
@@ -31,14 +36,15 @@ class LogisticRegression(object):
         self.gradient_history = []
         self.accuracy_history = []
 
-
-
-
     def gradient(self, x, y):
         logistic = lambda z: 1. / (1 + np.exp(-z))  # logistic function
         N, D = x.shape
         yh = logistic(np.dot(x, self.theta))  # predictions  size N
         grad = np.dot(x.T, yh - y) / N  # divide by N because cost is mean over N points
+        if self.penalty == 'l1':
+            grad[1:] += self.lambdaa * np.sign(self.theta[1:])
+        elif self.penalty == 'l2':
+            grad[1:] += self.lambdaa * self.theta[1:]
         return grad
 
     def split_data(self, x, y):
