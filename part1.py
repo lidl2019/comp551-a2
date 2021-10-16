@@ -84,7 +84,7 @@ if __name__=='__main__':
     best_params, best_pred, _, _, paths = grid_search_LR(train=train_processed,
                                                          val=val_processed,
                                                          ranges=param_space,
-                                                         measure=accuracy_score,
+                                                         measure=accuracy,
                                                          record_convergence_paths=True
                                                          )
 

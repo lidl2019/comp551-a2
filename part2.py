@@ -7,7 +7,6 @@ from nltk.stem import SnowballStemmer
 from nltk.corpus import stopwords
 
 
-
 # region preprocessing
 
 
@@ -16,7 +15,7 @@ def build_vectorizer(type: str = "count",
                      ngram_range: Tuple[int, int] = (1,1),
                      lowercase: bool = True,
                      normalization: str = None,
-                     stopwords: Iterable = ()
+                     stopwords: Iterable[str] = ()
                      ) -> Vectorizer:
     '''
     Build a vectorizer.
@@ -164,7 +163,7 @@ if __name__=='__main__':
                                                                           val=validation,
                                                                           ranges=params_ranges,
                                                                           pipelines=pipelines,
-                                                                          measure=accuracy_score,
+                                                                          measure=accuracy,
                                                                           search_method=grid_search_LR)
 
 
