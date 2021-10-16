@@ -23,7 +23,6 @@ class LogisticRegression(object):
         self.momentum = momentum
         self.theta = None
         self.is_converged = False
-        self.gradient_history = []
         self.accuracy_history = []
         self.reset_each_time = reset_each_time
         self.penalty = penalty
@@ -33,7 +32,6 @@ class LogisticRegression(object):
 
         self.theta = None
         self.is_converged = False
-        self.gradient_history = []
         self.accuracy_history = []
 
     def gradient(self, x, y):
@@ -100,6 +98,7 @@ class LogisticRegression(object):
         N, D = x.shape
         # print(f'GUTEN TAG: {(N, D)}\n')
         self.theta = np.zeros(D)
+        self.last_gradient = np.zeros(D)
         cur_gradient = np.inf
         # inital_gradient
         num_of_iter = 0
@@ -130,16 +129,14 @@ class LogisticRegression(object):
                 (batched_x, batched_y) = batched_data[i]
 
                 cur_gradient = self.gradient(batched_x, batched_y)
-                self.gradient_history.append(cur_gradient)
 
                 if not self.momentum:
                     self.theta = self.theta - self.learning_rate * cur_gradient
                 else:
                     b = self.momentum
-                    history_len = len(self.gradient_history)
-                    gradient_weights = np.arange(1, history_len)
-                    for t in gradient_weights:
-                        self.theta += self.gradient_history[-t] * (1 - b) * b ** (history_len - t)
+                    cur_gradient = b * self.last_gradient + (1-b) * cur_gradient
+                    self.last_gradient = cur_gradient
+                    self.theta -= self.learning_rate * cur_gradient
                 # update the gradient
                 # num_of_iter += 1
 
