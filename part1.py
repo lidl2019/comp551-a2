@@ -2,6 +2,7 @@ from utils import *
 from LogisticRegression import *
 
 
+
 def grid_search_LR(train: np.ndarray,
                    val: np.ndarray,
                    param_spaces: List[Dict[str, List[Any]]],
@@ -97,17 +98,42 @@ if __name__=='__main__':
               'batch_size': [float('inf')],
               'momentum': [0]
               }
-    space3 = {'max_epoch': [1000000],
+    space3 = {'max_epoch': [5000000],
               'learning_rate': [0.001],
               'penalty': [None],
               'batch_size': [float('inf')],
-              'momentum': [0]
+              'momentum': [0.9]
               }
     train_processed, val_processed = preprocess(training, validation, pipeline)
     best_params, best_score, _, _, paths = grid_search_LR(train=train_processed,
                                                          val=val_processed,
-                                                         param_spaces=[space1],
+                                                         param_spaces=[space3],
                                                          measure=accuracy,
                                                          record_convergence_paths=True,
                                                          verbose=True)
 
+    import json
+    import os.path as osp
+
+    script_dir = osp.dirname(__file__)
+    epoch_ver_accuracy = {}
+    keys = ['1','5', '10','50', '100','500', '1000','5000', '10000','50000', '100000','500000' ,'1000000','5000000']
+    for i in keys:
+        epoch_ver_accuracy[i] = 0
+    all_training_acc = paths[0][1]
+    for k in keys:
+        epoch_ver_accuracy[k] = all_training_acc[int(k) - 1]
+    epoch_json = json.dumps(epoch_ver_accuracy, indent=2)
+    path = osp.join(script_dir, 'epoch_vs_accuracy.json')
+    with open(path, 'w') as f:
+        f.write(epoch_json)
+
+
+    epoch_vs_acc_linear = {}
+    p = np.arange(0, 5000000, 10000)
+    for i in p:
+        epoch_vs_acc_linear[str(i)] = paths[0][1][i-1]
+    epoch_json2 = json.dumps(epoch_vs_acc_linear, indent=2)
+    path2 = osp.join(script_dir, 'epoch_vs_accuracy_linear.json')
+    with open(path2, 'w') as f:
+        f.write(epoch_json2)
