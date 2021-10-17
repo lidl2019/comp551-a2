@@ -116,7 +116,7 @@ def part2(sizes, checkpoint_step, f_json = None, f_img = None):
     pipeline = []
     spaces = [{"batch_size": sizes}]
     train_processed, val_processed = preprocess(training, validation, pipeline)
-    best_params, best_score, _, _, paths = grid_search_LR(train=train_processed, val=val_processed, param_spaces=spaces,
+    best_params, best_score, _,  paths = grid_search_LR(train=train_processed, val=val_processed, param_spaces=spaces,
                                                           measure=accuracy, verbose=True, record_convergence_paths=True)
     path = None
     for combination, p in paths:

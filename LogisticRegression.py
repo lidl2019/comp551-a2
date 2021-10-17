@@ -24,7 +24,8 @@ class LogisticRegression(object):
         self.theta = None
         self.is_converged = False
         self.accuracy_history = []
-        self.weight_history = []
+        self.gradient_history = []
+        self.cost_history = []
         self.reset_each_time = reset_each_time
         self.penalty = penalty
         self.lambdaa = lambdaa
@@ -34,7 +35,8 @@ class LogisticRegression(object):
         self.theta = None
         self.is_converged = False
         self.accuracy_history = []
-        self.weight_history = []
+        self.gradient_history = []
+        self.cost_history = []
 
     def gradient(self, x, y):
         N, D = x.shape
@@ -140,8 +142,8 @@ class LogisticRegression(object):
                 # update the gradient
                 # num_of_iter += 1
             max_theta_diff = max(abs(self.theta-last_theta))
-            self.weight_history.append(np.linalg.norm(cur_gradient))
-
+            self.gradient_history.append(np.linalg.norm(cur_gradient))
+            self.cost_history.append(self.cost_fn(x, y))
             cur_acc = self.accuracy(x, y)
             if self.verbose:
                 print("current accuracy = {}".format(cur_acc))
@@ -162,12 +164,17 @@ class LogisticRegression(object):
         return self.is_converged
 
     def convergence_path(self):
+        return self.gradient_history
 
-        return self.weight_history
+    def accuracy_path(self):
+        return self.accuracy_history
 
-    def cost_fn(self, x, y, w):
+    def cost_path(self):
+        return self.cost_history
+
+    def cost_fn(self, x, y):
         N, D = x.shape
-        z = np.dot(x, w)
+        z = np.dot(x, self.theta)
         J = np.mean(y * np.log1p(np.exp(-z)) + (1 - y) * np.log1p(
             np.exp(z)))  # log1p calculates log(1+x) to remove floating point inaccuracies
         return J
