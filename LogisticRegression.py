@@ -113,7 +113,7 @@ class LogisticRegression(object):
         if self.verbose:
             print("current batch_size = {}".format(self.batch_size))
         self.epoch = 1
-        while np.linalg.norm(cur_gradient) > self.epsilon and self.epoch < self.max_epoch:
+        while self.epoch < self.max_epoch:
             # stopped at loss < epsilon -> converged = True
             # if num_of_iter > self.max_iters -> converged = False
             #             new_x, new_y = x, y
@@ -125,6 +125,8 @@ class LogisticRegression(object):
 
             if self.verbose:
                 print("start epoch {}".format(self.epoch))
+
+            prev_cost = self.cost_fn(x, y)
 
             for i in range(batched_data_entries):
                 # go over the whole dataset once according to the batch_size
@@ -143,7 +145,7 @@ class LogisticRegression(object):
                 # num_of_iter += 1
             max_theta_diff = max(abs(self.theta-last_theta))
             self.gradient_history.append(np.linalg.norm(cur_gradient))
-            self.cost_history.append(self.cost_fn(x, y))
+
             cur_acc = self.accuracy(x, y)
             if self.verbose:
                 print("current accuracy = {}".format(cur_acc))
@@ -152,8 +154,14 @@ class LogisticRegression(object):
 
             self.epoch += 1
 
-        if np.linalg.norm(cur_gradient) <= self.epsilon:
-            self.is_converged = True
+            cur_cost = self.cost_fn(x, y)
+            self.cost_history.append(abs(cur_cost-prev_cost))
+            conv_condition = np.linalg.norm(cur_gradient) <= self.epsilon
+            #conv_condition = abs(cur_cost-prev_cost) <= self.epsilon
+            if conv_condition:
+                self.is_converged = True
+                break
+
         if self.verbose:
             print(
                 f'terminated after epochs {self.epoch},  with norm of the gradient equal to {np.linalg.norm(cur_gradient)}')
