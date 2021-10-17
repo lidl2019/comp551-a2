@@ -1,7 +1,8 @@
 from utils import *
 from LogisticRegression import *
 
-
+import json
+import os.path as osp
 
 def grid_search_LR(train: np.ndarray,
                    val: np.ndarray,
@@ -49,6 +50,7 @@ def grid_search_LR(train: np.ndarray,
     training_reports = [] if report_train else None
     val_reports = [] if report_val else None
     convergence_paths = [] if record_convergence_paths else None
+    models = []
     for combination in tqdm(combinations):
         if verbose:
             print(f"Trying combination {combination}")
@@ -75,16 +77,112 @@ def grid_search_LR(train: np.ndarray,
 
     return best_params, best_score, training_reports, val_reports, convergence_paths
 
-
-if __name__=='__main__':
+def part1(params, checkpoint_step, f_json = None, f_img = None):
     training_path = "./data_A2/diabetes/diabetes_train.csv"
     test_path = "./data_A2/diabetes/diabetes_test.csv"
     validation_path = "./data_A2/diabetes/diabetes_val.csv"
     training = read(training_path, True)
     test = read(test_path)
     validation = read(validation_path)
-
     pipeline = []
+    train_processed, val_processed = preprocess(training, validation, pipeline)
+
+    clf = LogisticRegression(**params)
+    clf.fit(training[:, :-1], training[:,-1].astype(int))
+    train_pred, val_pred = clf.predict(training[:, :-1]), clf.predict(validation[:, :-1])
+    path = clf.convergence_path()
+
+    script_dir = osp.dirname(__file__)
+    content_dict = {}
+    content_dict["params"] = params
+    content_dict["score_on_val"] = accuracy(val_pred, validation[:,-1].astype(int))
+    values = []
+    checkpoints = np.arange(0, len(path), checkpoint_step)
+    if len(path) % checkpoint_step != 0:
+        checkpoints = np.append(checkpoints, [len(path)-1])
+    for i in checkpoints:
+        content_dict[str(i)] = path[i]
+        values.append(path[i])
+
+    content = json.dumps(content_dict, indent=2)
+    if f_json:
+        path = osp.join(script_dir, f_json)
+        with open(path, 'w') as f:
+            f.write(content)
+    plt.clf()
+    plt.plot(checkpoints.tolist(), values,
+             label=f"{params['max_epoch']} epochs, learning rate {params['learning_rate']}")
+    plt.ylim(top=0.5,bottom=0)
+    plt.xlabel('Number of epochs')
+    plt.ylabel('Norm of gradient')
+    plt.title('Convergence path')
+    plt.legend()
+    plt.show()
+    if f_img:
+        plt.savefig(f_img, format='png')
+    return
+
+def part2(sizes, checkpoint_step, f_json = None, f_img = None):
+    training_path = "./data_A2/diabetes/diabetes_train.csv"
+    test_path = "./data_A2/diabetes/diabetes_test.csv"
+    validation_path = "./data_A2/diabetes/diabetes_val.csv"
+    training = read(training_path, True)
+    test = read(test_path)
+    validation = read(validation_path)
+    pipeline = []
+    spaces = [{"batch_size": sizes}]
+    train_processed, val_processed = preprocess(training, validation, pipeline)
+    best_params, best_score, _, _, paths = grid_search_LR(train=train_processed,
+                                                          val=val_processed,
+                                                          param_spaces=spaces,
+                                                          measure=accuracy,
+                                                          record_convergence_paths=True,
+                                                          verbose=True)
+    path = None
+    for combination, p in paths:
+        if best_params == combination:
+            path = p
+    if not path:
+        path = paths[0][1]
+        print("Error: did not found the best params in paths")
+    script_dir = osp.dirname(__file__)
+    content_dict = {}
+    content_dict["params"] = best_params
+    content_dict["score_on_val"] = best_score
+    accuracies = []
+    checkpoints = np.arange(0, len(path), checkpoint_step)
+    if len(path) % checkpoint_step != 0:
+        checkpoints = np.append(checkpoints, [len(path) - 1])
+    for i in checkpoints:
+        content_dict[str(i)] = path[i]
+        accuracies.append(path[i])
+
+    content = json.dumps(content_dict, indent=2)
+    if f_json:
+        path = osp.join(script_dir, f_json)
+        with open(path, 'w') as f:
+            f.write(content)
+    plt.clf()
+    plt.plot(checkpoints.tolist(), accuracies,
+             label=f"{best_params['max_epoch']} epochs, learning rate {best_params['learning_rate']}")
+    plt.ylim(top=0.5, bottom=0)
+    plt.xlabel('Number of epochs')
+    plt.ylabel('Average accuracy on training set')
+    plt.title('Convergence path')
+    plt.legend()
+    plt.show()
+    if f_img:
+        plt.savefig(f_img, format='png')
+    return
+
+def part3(momentums, f_json = None, f_img = None):
+    pass
+
+def part4(small_size, large_size, f_json = None, f_img = None):
+    pass
+
+
+if __name__=='__main__':
     space1 = {'max_epoch': [10000],
               'learning_rate': [0.001],
               'penalty': ['l2', 'l1'],
@@ -98,42 +196,28 @@ if __name__=='__main__':
               'batch_size': [float('inf')],
               'momentum': [0]
               }
-    space3 = {'max_epoch': [5000000],
-              'learning_rate': [0.001],
+    space3 = {'max_epoch': [3000],
+              'learning_rate': [0.0002],
               'penalty': [None],
               'batch_size': [float('inf')],
-              'momentum': [0.9]
+              'momentum': [0]
               }
-    train_processed, val_processed = preprocess(training, validation, pipeline)
-    best_params, best_score, _, _, paths = grid_search_LR(train=train_processed,
-                                                         val=val_processed,
-                                                         param_spaces=[space3],
-                                                         measure=accuracy,
-                                                         record_convergence_paths=True,
-                                                         verbose=True)
+    params = {'max_epoch': 8000000,
+              'learning_rate': 0.0002,
+              'penalty': None,
+              'batch_size': float('inf'),
+              'momentum': 0
+              }
+    part1(params, 1000, f_json="results/epoch_vs_acc.json", f_img="results/epoch_vs_acc.jpg")
 
-    import json
-    import os.path as osp
-
-    script_dir = osp.dirname(__file__)
-    epoch_ver_accuracy = {}
-    keys = ['1','5', '10','50', '100','500', '1000','5000', '10000','50000', '100000','500000' ,'1000000','5000000']
-    for i in keys:
-        epoch_ver_accuracy[i] = 0
-    all_training_acc = paths[0][1]
-    for k in keys:
-        epoch_ver_accuracy[k] = all_training_acc[int(k) - 1]
-    epoch_json = json.dumps(epoch_ver_accuracy, indent=2)
-    path = osp.join(script_dir, 'epoch_vs_accuracy.json')
-    with open(path, 'w') as f:
-        f.write(epoch_json)
+    params = {'max_epoch': 8000000,
+              'learning_rate': 0.0001,
+              'penalty': None,
+              'batch_size': float('inf'),
+              'momentum': 0
+              }
+    part1(params, 1000, f_json="results/epoch_vs_acc2.json", f_img="results/epoch_vs_acc2.jpg")
 
 
-    epoch_vs_acc_linear = {}
-    p = np.arange(0, 5000000, 10000)
-    for i in p:
-        epoch_vs_acc_linear[str(i)] = paths[0][1][i-1]
-    epoch_json2 = json.dumps(epoch_vs_acc_linear, indent=2)
-    path2 = osp.join(script_dir, 'epoch_vs_accuracy_linear.json')
-    with open(path2, 'w') as f:
-        f.write(epoch_json2)
+
+

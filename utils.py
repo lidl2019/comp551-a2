@@ -4,6 +4,7 @@ from itertools import product
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 from typing import List, Tuple, Callable, Dict, Any, Union, Optional, Iterable
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 Vectorizer = Union[TfidfVectorizer, CountVectorizer]
@@ -149,7 +150,7 @@ def grid_search_pipelines(train: np.ndarray,
     best_score = float('-inf')
     best_pipeline = None
     searched_params = {}
-    pipeline_scores = None if report else {}
+    pipeline_scores = {}
     for name, (pipeline, vectorizer) in pipelines.items():
         train_processed, val_processed = preprocess(train, val, pipeline, vectorizer)
         best_params, score, _, _ = search_method(train_processed,
@@ -165,4 +166,3 @@ def grid_search_pipelines(train: np.ndarray,
         searched_params[name] = best_params
 
     return best_pipeline, best_score, searched_params, pipeline_scores
-

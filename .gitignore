@@ -4,7 +4,7 @@
 .ipynb_checkpoints
 __pycache__
 test.py
-
+/_MACOSX
 report/*
 !report/writeup.tex
 !report/writeup.pdf

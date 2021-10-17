@@ -24,15 +24,17 @@ class LogisticRegression(object):
         self.theta = None
         self.is_converged = False
         self.accuracy_history = []
+        self.weight_history = []
         self.reset_each_time = reset_each_time
         self.penalty = penalty
         self.lambdaa = lambdaa
+        self.epoch = 1
 
     def reset(self):
-
         self.theta = None
         self.is_converged = False
         self.accuracy_history = []
+        self.weight_history = []
 
     def gradient(self, x, y):
         N, D = x.shape
@@ -108,8 +110,8 @@ class LogisticRegression(object):
 
         if self.verbose:
             print("current batch_size = {}".format(self.batch_size))
-        epoch = 1
-        while np.linalg.norm(cur_gradient) > self.epsilon and epoch < self.max_epoch:
+        self.epoch = 1
+        while np.linalg.norm(cur_gradient) > self.epsilon and self.epoch < self.max_epoch:
             # stopped at loss < epsilon -> converged = True
             # if num_of_iter > self.max_iters -> converged = False
             #             new_x, new_y = x, y
@@ -120,14 +122,14 @@ class LogisticRegression(object):
             batched_data_entries = len(batched_data)
 
             if self.verbose:
-                print("start epoch {}".format(epoch))
+                print("start epoch {}".format(self.epoch))
 
             for i in range(batched_data_entries):
                 # go over the whole dataset once according to the batch_size
                 (batched_x, batched_y) = batched_data[i]
 
                 cur_gradient = self.gradient(batched_x, batched_y)
-
+                last_theta = self.theta
                 if not self.momentum:
                     self.theta = self.theta - self.learning_rate * cur_gradient
                 else:
@@ -137,6 +139,8 @@ class LogisticRegression(object):
                     self.theta -= self.learning_rate * cur_gradient
                 # update the gradient
                 # num_of_iter += 1
+            max_theta_diff = max(abs(self.theta-last_theta))
+            self.weight_history.append(np.linalg.norm(cur_gradient))
 
             cur_acc = self.accuracy(x, y)
             if self.verbose:
@@ -144,13 +148,13 @@ class LogisticRegression(object):
                 print("————————————————————————————————————————————————————————————————————————————————")
             self.accuracy_history.append(cur_acc)
 
-            epoch += 1
+            self.epoch += 1
 
         if np.linalg.norm(cur_gradient) <= self.epsilon:
             self.is_converged = True
         if self.verbose:
             print(
-                f'terminated after epochs {epoch},  with norm of the gradient equal to {np.linalg.norm(cur_gradient)}')
+                f'terminated after epochs {self.epoch},  with norm of the gradient equal to {np.linalg.norm(cur_gradient)}')
             print(f'the weight found: {self.theta}')
         return self
 
@@ -159,7 +163,7 @@ class LogisticRegression(object):
 
     def convergence_path(self):
 
-        return self.accuracy_history
+        return self.weight_history
 
     def cost_fn(self, x, y, w):
         N, D = x.shape
