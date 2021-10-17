@@ -153,10 +153,10 @@ def grid_search_pipelines(train: np.ndarray,
     pipeline_scores = {}
     for name, (pipeline, vectorizer) in pipelines.items():
         train_processed, val_processed = preprocess(train, val, pipeline, vectorizer)
-        best_params, score, _, _ = search_method(train_processed,
+        best_params, score = search_method(train_processed,
                                                     val_processed,
                                                     param_spaces,
-                                                    measure)
+                                                    measure)[:2]
         if score > best_score:
             best_score = score
             best_pipeline = name
