@@ -95,11 +95,11 @@ class LogisticRegression(object):
         for epoch in iterable:
             grad_after_epoch = self.gradient(x, y)
 
-            if self.record and epoch%self.record_step == 0:
+            if self.record and epoch % self.record_step == 0:
                 self.grad_hist.append(np.linalg.norm(grad_after_epoch))
-                self.acc_hist.append(self.accuracy(x,y))
+                self.acc_hist.append(self.accuracy(x, y))
                 if not (x_val is None or y_val is None):
-                    self.acc_hist_val.append(self.accuracy(x_val,y_val))
+                    self.acc_hist_val.append(self.accuracy(x_val, y_val))
 
 
             conv_condition = np.linalg.norm(grad_after_epoch) <= self.epsilon
@@ -113,8 +113,8 @@ class LogisticRegression(object):
                 else:
                     b = self.momentum
                     cur_gradient = b * self.last_gradient + (1 - b) * grad_after_epoch
-                    self.last_gradient = grad_after_epoch
-                    self.theta -= self.learning_rate * grad_after_epoch
+                    self.last_gradient = cur_gradient
+                    self.theta -= self.learning_rate * cur_gradient
             else:
                 new_x, new_y = self.shuffle(x, y)
                 # everytime go over the whole dataset, reshuffle the dataset once
@@ -176,8 +176,8 @@ class LogisticRegression(object):
     def R_square_score(self, X_test, y_test):
         return R_square(y_test, self.predict(X_test))
 
-    def accuracy(self, X_test, y_test):
-        y_hat = self.predict(X_test)
+    def accuracy(self, x_test, y_test):
+        y_hat = self.predict(x_test)
 
         # print(y_hat)
         return sum(y_hat == y_test) / len(y_hat)
