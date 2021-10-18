@@ -4,10 +4,14 @@ from LogisticRegression import *
 import json
 import os.path as osp
 
-def grid_search_LR(train: np.ndarray, val: np.ndarray, param_spaces: List[Dict[str, List[Any]]],
-                   measure: Callable[[np.ndarray, np.ndarray], float], verbose: bool = False,
-                   force_convergence: bool = False, record_convergence_paths: bool = False
-                   ) -> Tuple[Dict[str, Any], float, List[Tuple], List[Tuple]]:
+
+def grid_search_LR(train: np.ndarray,
+                   val: np.ndarray,
+                   param_spaces: List[Dict[str, List[Any]]],
+                   measure: Callable[[np.ndarray, np.ndarray], float],
+                   verbose: bool = False,
+                   force_convergence: bool = False,
+                   ) -> Tuple[Dict[str, Any], float, List[Tuple]]:
     '''
     Finds the best choice of hyperparameters, given the range of values of each parameter. Optionally returns the
     performance report of all parameter combinations on training or validation set.
@@ -20,11 +24,8 @@ def grid_search_LR(train: np.ndarray, val: np.ndarray, param_spaces: List[Dict[s
     predictions and labels as input
     :param verbose: whether print messages
     :param force_convergence: If true, then classifiers that fail to converge will not be considered.
-    :param record_convergence_paths: The accuracy on the training set after each epoch. If false, the fifth
-     return value will be None.
-    :return: A five tuple. The first is the best combination of parameters, and the second is its score
+    :return: A three tuple. The first is the best combination of parameters, and the second is its score
     on the validation set. The third is a list of each parameter combination and the corresponding fitted model
-    The fourth return value is the convergence path for each combination of parameters.
     '''
 
     best_score = float('-inf')
@@ -36,7 +37,6 @@ def grid_search_LR(train: np.ndarray, val: np.ndarray, param_spaces: List[Dict[s
     train_labels = train[:, -1].astype(int)
     val_labels = val[:, -1].astype(int)
 
-    convergence_paths = [] if record_convergence_paths else None
     models = []
     for combination in tqdm(combinations):
         if verbose:
@@ -50,8 +50,6 @@ def grid_search_LR(train: np.ndarray, val: np.ndarray, param_spaces: List[Dict[s
 
         score = measure(val_pred, val_labels)
         models += [(combination, clf)]
-        if record_convergence_paths:
-            convergence_paths += [(combination, clf.convergence_path())]
         if score > best_score:
             best_score = score
             best_params = combination
@@ -59,9 +57,9 @@ def grid_search_LR(train: np.ndarray, val: np.ndarray, param_spaces: List[Dict[s
             print(f"score: {score}, \
             {'converged' if clf.converged() else 'not converged, gradient '+str(float(np.linalg.norm(clf.last_gradient)))}")
 
-    return best_params, best_score, models, convergence_paths
+    return best_params, best_score, models
 
-def part1(params, checkpoint_step, f_json = None, f_img = None):
+def part1(params, checkpoint_step, f_img1 = None, f_img2 = None):
     training_path = "./data_A2/diabetes/diabetes_train.csv"
     test_path = "./data_A2/diabetes/diabetes_test.csv"
     validation_path = "./data_A2/diabetes/diabetes_val.csv"
@@ -70,41 +68,47 @@ def part1(params, checkpoint_step, f_json = None, f_img = None):
     validation = read(validation_path)
     pipeline = []
     train_processed, val_processed = preprocess(training, validation, pipeline)
-
+    params["record_step"] = checkpoint_step
     clf = LogisticRegression(**params)
-    clf.fit(training[:, :-1], training[:,-1].astype(int))
+    clf.fit(training[:, :-1], training[:,-1], True, validation[:, :-1], validation[:,-1])
     train_pred, val_pred = clf.predict(training[:, :-1]), clf.predict(validation[:, :-1])
-    path = clf.convergence_path()
 
+    print(accuracy(train_pred, train_processed[:, -1]))
+    print(accuracy(val_pred, val_processed[:,-1]))
     script_dir = osp.dirname(__file__)
     content_dict = {}
     content_dict["params"] = params
     content_dict["score_on_val"] = accuracy(val_pred, validation[:,-1].astype(int))
-    values = []
-    checkpoints = np.arange(0, len(path), checkpoint_step)
-    if len(path) % checkpoint_step != 0:
-        checkpoints = np.append(checkpoints, [len(path)-1])
-    for i in checkpoints:
-        content_dict[str(i)] = path[i]
-        values.append(path[i])
-
-    content = json.dumps(content_dict, indent=2)
-    if f_json:
-        path = osp.join(script_dir, f_json)
-        with open(path, 'w') as f:
-            f.write(content)
+    acc = clf.acc_hist
+    val_acc = clf.acc_hist_val
+    grad = clf.grad_hist
+    epochs = clf.epochs
+    checkpoints = checkpoint_step * np.arange(0, len(acc))
     plt.clf()
-    plt.plot(checkpoints.tolist(), values,
-             label=f"{params['max_epoch']} epochs, learning rate {params['learning_rate']}")
-    plt.ylim(top=0.5,bottom=0)
+    plt.plot(checkpoints.tolist(), acc,
+             label="training")
+    plt.plot(checkpoints.tolist(), val_acc,
+             label="validation")
     plt.xlabel('Number of epochs')
-    plt.ylabel('Norm of gradient')
-    plt.title('Convergence path')
+    plt.ylabel('Accuracy')
+    plt.title(f"Accuracies for {epochs} epochs, learning rate {params['learning_rate']}")
     plt.legend()
+    if f_img1:
+        plt.savefig(f_img1)
     plt.show()
-    if f_img:
-        plt.savefig(f_img, format='png')
-    return
+
+    plt.clf()
+    plt.plot(checkpoints.tolist(), grad,
+             label="cost gradient")
+    plt.ylim(top=.05,bottom=0)
+    plt.xlabel('Number of epochs')
+    plt.ylabel('Norm of the gradient of cost')
+    plt.title(f"Convergence plot for {epochs} epochs, learning rate {params['learning_rate']}")
+    plt.legend()
+    if f_img2:
+        plt.savefig(f_img2)
+    plt.show()
+    return clf
 
 def part2(sizes, checkpoint_step, f_json = None, f_img = None):
     training_path = "./data_A2/diabetes/diabetes_train.csv"
@@ -182,22 +186,13 @@ if __name__=='__main__':
               'batch_size': [float('inf')],
               'momentum': [0]
               }
-    params = {'max_epoch': 8000000,
-              'learning_rate': 0.0002,
-              'penalty': None,
+    params = {'max_epoch': 10000000,
+              'learning_rate': 0.0003,
               'batch_size': float('inf'),
-              'momentum': 0
+              'momentum': 0,
+              'record': True
               }
-    part1(params, 1000, f_json="results/epoch_vs_acc.json", f_img="results/epoch_vs_acc.jpg")
-
-    params = {'max_epoch': 8000000,
-              'learning_rate': 0.0001,
-              'penalty': None,
-              'batch_size': float('inf'),
-              'momentum': 0
-              }
-    part1(params, 1000, f_json="results/epoch_vs_acc2.json", f_img="results/epoch_vs_acc2.jpg")
-
-
-
+    im1 = "results/1.1/epoch_vs_acc2.jpg"
+    im2 = "results/1.1/epoch_vs_grad2.jpg"
+    clf = part1(params, 1000, f_img1=im1, f_img2=im2)
 

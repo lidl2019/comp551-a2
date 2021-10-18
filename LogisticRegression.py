@@ -12,7 +12,9 @@ class LogisticRegression(object):
                  momentum=0,
                  reset_each_time = True,
                  penalty=None,
-                 lambdaa=1
+                 lambdaa=1,
+                 record=False,
+                 record_step=1000,
                  ):
         self.add_bias = add_bias
         self.learning_rate = learning_rate
@@ -23,29 +25,29 @@ class LogisticRegression(object):
         self.momentum = momentum
         self.theta = None
         self.is_converged = False
-        self.accuracy_history = []
-        self.gradient_history = []
-        self.cost_history = []
         self.reset_each_time = reset_each_time
         self.penalty = penalty
         self.lambdaa = lambdaa
-        self.epoch = 1
+        self.epochs = 1
+        self.record = record
+        self.record_step = record_step
+        self.grad_norm = None
+        self.grad_hist = []
+        self.acc_hist = []
+        self.acc_hist_val = []
 
     def reset(self):
         self.theta = None
         self.is_converged = False
-        self.accuracy_history = []
-        self.gradient_history = []
-        self.cost_history = []
 
     def gradient(self, x, y):
         N, D = x.shape
-        yh = logistic(np.dot(x, self.theta).astype(float))  # predictions  size N
+        yh = logistic(np.dot(x, self.theta))  # predictions  size N
         grad = np.dot(x.T, yh - y) / N  # divide by N because cost is mean over N points
         if self.penalty == 'l1':
-            grad[1:] += self.lambdaa * np.sign(self.theta[1:])
+            grad[:-1] += self.lambdaa * np.sign(self.theta[1:])
         elif self.penalty == 'l2':
-            grad[1:] += self.lambdaa * self.theta[1:]
+            grad[:-1] += self.lambdaa * self.theta[1:]
         return grad
 
     def split_data(self, x, y):
@@ -65,120 +67,92 @@ class LogisticRegression(object):
         return result
 
     def shuffle(self, x, y):
-        #         print("x shape {}" .format(x.shape))
-        #         print("y shape {}".format(y.shape))
-        #         data = np.stack((x, y), axis=1)
-        #         # data.shape
-        #         np.random.shuffle(data)
-        #         new_x = data[:, :-1]
-        #         new_y = data[:, -1]
-        #         print("new_x shape {}".format(new_x.shape))
-        #         print("new_y shape {}".format(new_y.shape))
-        #         return new_x, new_y
-        #         d = np.append(x, y if y.ndim > 1 else y[:, np.new_axis], axis = 1)
-        #         np.random.shuffle(d)
-        #         return d[:, :-1], d[:, -1]
         shuffle = np.random.permutation(x.shape[0])
         new_x = x[shuffle]
         new_y = y[shuffle]
         return new_x, new_y
 
-    def fit(self, x, y):
+    def fit(self, x, y, show_progress=False, x_val=None, y_val=None):
         if self.reset_each_time:
             self.reset()
         # mini-batch ->
         if x.ndim == 1:
             x = x[:, None]
-
-        # print(f'GSLOLOKOKO: {x.shape}\n')
-
         if self.add_bias:
             N = x.shape[0]
             x = np.column_stack([x, np.ones(N)])
-        #     add bias
 
         N, D = x.shape
-        # print(f'GUTEN TAG: {(N, D)}\n')
         self.theta = np.zeros(D)
         self.last_gradient = np.zeros(D)
-        cur_gradient = np.inf
         # inital_gradient
-        num_of_iter = 0
-        # number of iterations
-        # the code snippet below is for gradient descent
-        # get the batched data from split_data
-        init_acc = self.accuracy(x, y)
-        self.accuracy_history.append(init_acc)
+        cur_gradient = np.inf
 
         if self.verbose:
             print("current batch_size = {}".format(self.batch_size))
-        self.epoch = 1
-        while self.epoch < self.max_epoch:
-            # stopped at loss < epsilon -> converged = True
-            # if num_of_iter > self.max_iters -> converged = False
-            #             new_x, new_y = x, y
-            new_x, new_y = self.shuffle(x, y)
-            # everytime go over the whole dataset, reshuffle the dataset once
-            batched_data = self.split_data(new_x, new_y)
-            # [(x, y),(x, y),(x, y),(x, y),(x, y)......(x, y)] according to batching
-            batched_data_entries = len(batched_data)
+        self.epochs = 1
+        iterable = tqdm(range(1, self.max_epoch+1)) if show_progress else range(1, self.max_epoch+1)
+        for epoch in iterable:
+            grad_after_epoch = self.gradient(x, y)
 
-            if self.verbose:
-                print("start epoch {}".format(self.epoch))
+            if self.record and epoch%self.record_step == 0:
+                self.grad_hist.append(np.linalg.norm(grad_after_epoch))
+                self.acc_hist.append(self.accuracy(x,y))
+                if not (x_val is None or y_val is None):
+                    self.acc_hist_val.append(self.accuracy(x_val,y_val))
 
-            prev_cost = self.cost_fn(x, y)
 
-            for i in range(batched_data_entries):
-                # go over the whole dataset once according to the batch_size
-                (batched_x, batched_y) = batched_data[i]
-
-                cur_gradient = self.gradient(batched_x, batched_y)
-                last_theta = self.theta
-                if not self.momentum:
-                    self.theta = self.theta - self.learning_rate * cur_gradient
-                else:
-                    b = self.momentum
-                    cur_gradient = b * self.last_gradient + (1-b) * cur_gradient
-                    self.last_gradient = cur_gradient
-                    self.theta -= self.learning_rate * cur_gradient
-                # update the gradient
-                # num_of_iter += 1
-            max_theta_diff = max(abs(self.theta-last_theta))
-            self.gradient_history.append(np.linalg.norm(cur_gradient))
-
-            cur_acc = self.accuracy(x, y)
-            if self.verbose:
-                print("current accuracy = {}".format(cur_acc))
-                print("————————————————————————————————————————————————————————————————————————————————")
-            self.accuracy_history.append(cur_acc)
-
-            self.epoch += 1
-
-            cur_cost = self.cost_fn(x, y)
-            self.cost_history.append(abs(cur_cost-prev_cost))
-            conv_condition = np.linalg.norm(cur_gradient) <= self.epsilon
-            #conv_condition = abs(cur_cost-prev_cost) <= self.epsilon
+            conv_condition = np.linalg.norm(grad_after_epoch) <= self.epsilon
             if conv_condition:
                 self.is_converged = True
                 break
 
+            if self.batch_size >= N:
+                if not self.momentum:
+                    self.theta -= self.learning_rate * grad_after_epoch
+                else:
+                    b = self.momentum
+                    cur_gradient = b * self.last_gradient + (1 - b) * grad_after_epoch
+                    self.last_gradient = grad_after_epoch
+                    self.theta -= self.learning_rate * grad_after_epoch
+            else:
+                new_x, new_y = self.shuffle(x, y)
+                # everytime go over the whole dataset, reshuffle the dataset once
+                batched_data = self.split_data(new_x, new_y)
+                # [(x, y),(x, y),(x, y),(x, y),(x, y)......(x, y)] according to batching
+                new_x, new_y = self.shuffle(x, y)
+                # everytime go over the whole dataset, reshuffle the dataset once
+                batched_data = self.split_data(new_x, new_y)
+                # [(x, y),(x, y),(x, y),(x, y),(x, y)......(x, y)] according to batching
+
+                for batched_x, batched_y in batched_data:
+                    # go over the whole dataset once according to the batch_size
+
+                    cur_gradient = self.gradient(batched_x, batched_y)
+                    if not self.momentum:
+                        self.theta -= self.learning_rate * cur_gradient
+                    else:
+                        b = self.momentum
+                        cur_gradient = b * self.last_gradient + (1-b) * cur_gradient
+                        self.last_gradient = cur_gradient
+                        self.theta -= self.learning_rate * cur_gradient
+                    # update the gradient
+
+        self.epochs = epoch
+        self.grad_norm = np.linalg.norm(self.gradient(x, y))
+        if self.record and epoch % self.record_step != 0:
+            self.grad_hist.append(np.linalg.norm(grad_after_epoch))
+            self.acc_hist.append(self.accuracy(x, y))
+            if not (x_val is None or y_val is None):
+                self.acc_hist_val.append(self.accuracy(x_val, y_val))
         if self.verbose:
             print(
-                f'terminated after epochs {self.epoch},  with norm of the gradient equal to {np.linalg.norm(cur_gradient)}')
+                f'terminated after epochs {self.epochs},  with norm of the gradient equal to {np.linalg.norm(cur_gradient)}')
             print(f'the weight found: {self.theta}')
         return self
 
     def converged(self):
         return self.is_converged
-
-    def convergence_path(self):
-        return self.gradient_history
-
-    def accuracy_path(self):
-        return self.accuracy_history
-
-    def cost_path(self):
-        return self.cost_history
 
     def cost_fn(self, x, y):
         N, D = x.shape

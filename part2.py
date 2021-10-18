@@ -83,9 +83,11 @@ def preprocess_vectorize(train: np.ndarray,
     return train, test
 
 
-def grid_search_LR(train: np.ndarray, val: np.ndarray, param_spaces: List[Dict[str, List[Any]]],
-                   measure: Callable[[np.ndarray, np.ndarray], float], verbose: bool = False,
-                   force_convergence: bool = False, record_convergence_paths: bool = False
+def grid_search_LR(train: np.ndarray,
+                   val: np.ndarray,
+                   param_spaces: List[Dict[str, List[Any]]],
+                   measure: Callable[[np.ndarray, np.ndarray], float],
+                   verbose: bool = False,
                    ) -> Tuple[Dict[str, Any], float, List[Tuple]]:
     '''
     Finds the best choice of hyperparameters, given the range of values of each parameter. Optionally returns the
@@ -98,10 +100,7 @@ def grid_search_LR(train: np.ndarray, val: np.ndarray, param_spaces: List[Dict[s
     the fourth return value will be None.
     predictions and labels as input
     :param verbose: whether print messages
-    :param force_convergence: If true, then classifiers that fail to converge will not be considered.
-    :param record_convergence_paths: The accuracy on the training set after each epoch. If false, the fifth
-     return value will be None.
-    :return: A five tuple. The first is the best combination of parameters, and the second is its score
+    :return: A three tuple. The first is the best combination of parameters, and the second is its score
     on the validation set. The third is a list of each parameter combination and the corresponding fitted model
     '''
 
@@ -121,7 +120,9 @@ def grid_search_LR(train: np.ndarray, val: np.ndarray, param_spaces: List[Dict[s
         clf = LogisticRegression(**combination)
 
         clf.fit(train[:, :-1], train_labels)
+
         train_pred, val_pred = clf.predict(train[:, :-1]), clf.predict(val[:, :-1])
+
         score = measure(val_pred, val_labels)
         models += [(combination, clf)]
         if score > best_score:
@@ -141,17 +142,17 @@ if __name__=='__main__':
     validation = read(validation_path)
 
     space1 = {'max_epoch': [500],
-              'learning_rate': [0.05, 0.001],
+              'learning_rate': [0.001],
               'penalty': ['l2', 'l1'],
               'lambdaa': [0.1, 0.01],
               'batch_size': [float('inf'), 1024],
-              'momentum': [0, 0.9]
+              'momentum': [0.9]
               }
     space2 = {'max_epoch': [500],
-              'learning_rate': [0.05, 0.001],
+              'learning_rate': [0.001],
               'penalty': [None],
               'batch_size': [float('inf'), 1024],
-              'momentum': [0, 0.9]
+              'momentum': [0.9]
               }
 
     pipelines = {
