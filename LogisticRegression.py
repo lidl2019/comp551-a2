@@ -5,7 +5,7 @@ class LogisticRegression(object):
 
     def __init__(self, add_bias=True,
                  learning_rate=1e-4,
-                 epsilon=1e-4,
+                 epsilon=5e-3,
                  max_epoch=100,
                  verbose=False,
                  batch_size=1,
