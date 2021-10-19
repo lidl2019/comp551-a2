@@ -116,17 +116,18 @@ def q1(params, checkpoint_step, f_img1 = None, f_img2 = None):
     return clf
 
 
-def q2(sizes: List[int],
+def q2to4(param_name: str,
+       range: List[int],
        params: Dict[str, Any],
        checkpoint_step: int,
        fnames_acc: List[str]=None,
        fnames_grad: List[str]=None,
        fname_performance: str=None,
        verbose=True):
-    if not fnames_acc is None and len(fnames_acc) != len(sizes):
+    if not fnames_acc is None and len(fnames_acc) != len(range):
         print("Error: file name list for accuracy does not match sizes in length")
         return
-    if not fnames_grad is None and len(fnames_grad) != len(sizes):
+    if not fnames_grad is None and len(fnames_grad) != len(range):
         print("Error: file name list for norm of gradient does not match sizes in length")
         return
     training_path = "./data_A2/diabetes/diabetes_train.csv"
@@ -139,7 +140,7 @@ def q2(sizes: List[int],
     p = dict(params)
     for k, v in p.items():
         p[k] = [v]
-    p["batch_size"] = sizes
+    p[param_name] = range
     spaces = [p]
     train_processed, val_processed = preprocess(training, validation, pipeline)
     best_params, best_score, models = grid_search_LR(train=train_processed,
@@ -160,7 +161,7 @@ def q2(sizes: List[int],
                  label="validation", alpha=0.5)
         plt.xlabel('Number of epochs')
         plt.ylabel('Accuracy')
-        plt.title(f"Accuracies for {epochs} epochs, batch_size {model.batch_size}")
+        plt.title(f"Accuracies for {epochs} epochs, {param_name} {getattr(model, param_name)}")
         plt.legend()
         if fnames_acc:
             plt.savefig(fnames_acc[i])
@@ -172,9 +173,8 @@ def q2(sizes: List[int],
         plt.plot(checkpoints.tolist(), grad, label="grad")
         plt.xlabel('Number of epochs')
         plt.ylabel('Norm of the gradient of the cost')
-        plt.title(f"Convergence plot for {epochs} epochs, batch_size {model.batch_size}")
+        plt.title(f"Convergence plot for {epochs} epochs, {param_name} {getattr(model, param_name)}")
         if fnames_grad:
-            print("save!!!!!")
             plt.savefig(fnames_grad[i])
         if verbose:
             plt.show()
@@ -182,7 +182,7 @@ def q2(sizes: List[int],
 
         if fname_performance:
             content[f"model {i}"] = {
-                "batch_size": model.batch_size,
+                param_name: getattr(model, param_name),
                 "lr": model.learning_rate,
                 "epochs": model.epochs,
                 "training accuracy": acc[-1],
@@ -192,17 +192,17 @@ def q2(sizes: List[int],
             with open(fname_performance, 'w') as f:
                 f.write(js)
         if verbose:
-            print(f"model with batch size {model.batch_size}:")
+            print(f"model with {param_name} {getattr(model, param_name)}:")
             print(f"\ttraining accuracy: {acc[-1]}")
             print(f"\tvalidation accuracy: {val_acc[-1]}")
     return models
 
 
-def part3(momentums, f_json = None, f_img = None):
+def q3(momentums, f_json = None, f_img = None):
     pass
 
 
-def part4(small_size, large_size, f_json = None, f_img = None):
+def q4(small_size, large_size, f_json = None, f_img = None):
     pass
 
 
@@ -230,4 +230,4 @@ if __name__=='__main__':
     acc_names = [f"results/1.2/acc-{i}.jpg" for i in sizes]
     grad_names = [f"results/1.2/norm-{i}.jpg" for i in sizes]
     perf_name = "results/1.2/performance.json"
-    models = q2(sizes, params, 1001, acc_names, grad_names, perf_name)
+    models = q2("batch_size", sizes, params, 1001, acc_names, grad_names, perf_name)
