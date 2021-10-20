@@ -207,27 +207,34 @@ def q4(small_size, large_size, f_json = None, f_img = None):
 
 
 if __name__=='__main__':
-    # region part1
-    params = {'max_epoch': 1,
+    # question1
+    # params = {'max_epoch': 1,
+    #           'learning_rate': 0.0003,
+    #           'batch_size': float('inf'),
+    #           'momentum': 0,
+    #           'record': True,
+    #           }
+    # im1 = "results/1.1/epoch_vs_acc.jpg"
+    # im2 = "results/1.1/epoch_vs_grad.jpg"
+    #
+    # clf = q1(params, 101, f_img1=None, f_img2=None)
+    # # endregion
+
+    params = {'max_epoch': 3000000,
               'learning_rate': 0.0003,
               'batch_size': float('inf'),
               'momentum': 0,
               'record': True,
               }
-    im1 = "results/1.1/epoch_vs_acc.jpg"
-    im2 = "results/1.1/epoch_vs_grad.jpg"
 
-    clf = q1(params, 101, f_img1=None, f_img2=None)
-    # endregion
+    # question2
+    batch_sizes = [8, 16, 32, 64, 128, 256]
+    acc_names2 = [f"results/1.2/acc-{i}.jpg" for i in batch_sizes]
+    grad_names2 = [f"results/1.2/norm-{i}.jpg" for i in batch_sizes]
+    perf_name2 = "results/1.2/performance.json"
+    models2 = q2to4("batch_size", batch_sizes, params, 1001, acc_names2, grad_names2, perf_name2)
 
-    params = {'max_epoch': 100000,
-              'learning_rate': 0.0675,
-              'batch_size': float('inf'),
-              'momentum': 0.99,
-              'record': True,
-              }
-    sizes = [600, 601, 602, 603]
-    acc_names = [f"results/1.2/acc-{i}.jpg" for i in sizes]
-    grad_names = [f"results/1.2/norm-{i}.jpg" for i in sizes]
-    perf_name = "results/1.2/performance.json"
-    models = q2("batch_size", sizes, params, 1001, acc_names, grad_names, perf_name)
+    # # question3
+    # models3 = q2to4("momentum", range, params, 1001, acc_names, grad_names, perf_name)
+    #
+    #
