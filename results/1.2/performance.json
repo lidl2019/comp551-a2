@@ -1,0 +1,17 @@
+{
+  "model 0": {
+    "batch_size": 256,
+    "lr": 0.0003,
+    "epochs": 3000000,
+    "training accuracy": 0.7433333333333333,
+    "validation accuracy": 0.76
+  }
+}{
+  "model 0": {
+    "batch_size": 128,
+    "lr": 0.0003,
+    "epochs": 3000000,
+    "training accuracy": 0.7816666666666666,
+    "validation accuracy": 0.73
+  }
+}
