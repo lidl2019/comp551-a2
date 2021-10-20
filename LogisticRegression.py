@@ -50,6 +50,27 @@ class LogisticRegression(object):
             grad[:-1] += self.lambdaa * self.theta[1:]
         return grad
 
+    def split_data(self, x, y):
+        result = []
+        data_size = self.batch_size
+        if self.batch_size >= x.shape[0]:
+            return [(x, y)]
+        else:
+            # starter = 0
+            for i in range(0, x.shape[0], data_size):
+                if i + data_size <= x.shape[0]:
+                    cur_data = (x[i:i + data_size], y[i:i + data_size])
+                    result.append(cur_data)
+                else:
+                    cur_data = (x[i:], y[i:])
+                    result.append(cur_data)
+        return result
+
+    def shuffle(self, x, y):
+        shuffle = np.random.permutation(x.shape[0])
+        new_x = x[shuffle]
+        new_y = y[shuffle]
+        return new_x, new_y
 
     def fit(self, x, y, show_progress=False, x_val=None, y_val=None):
         if self.reset_each_time:
@@ -95,15 +116,17 @@ class LogisticRegression(object):
                     self.last_gradient = cur_gradient
                     self.theta -= self.learning_rate * cur_gradient
             else:
-                indices = np.random.permutation(x.shape[0])
-                for i in range(0, x.shape[0], self.batch_size):
+                new_x, new_y = self.shuffle(x, y)
+                # everytime go over the whole dataset, reshuffle the dataset once
+                batched_data = self.split_data(new_x, new_y)
+                # [(x, y),(x, y),(x, y),(x, y),(x, y)......(x, y)] according to batching
+                new_x, new_y = self.shuffle(x, y)
+                # everytime go over the whole dataset, reshuffle the dataset once
+                batched_data = self.split_data(new_x, new_y)
+                # [(x, y),(x, y),(x, y),(x, y),(x, y)......(x, y)] according to batching
 
-                    if i + self.batch_size <= x.shape[0]:
-                        batched_x = x[indices[i: i+self.batch_size]]
-                        batched_y = y[indices[i: i+self.batch_size]]
-                    else:
-                        batched_x = x[indices[i:]]
-                        batched_y = y[indices[i:]]
+                for batched_x, batched_y in batched_data:
+                    # go over the whole dataset once according to the batch_size
 
                     cur_gradient = self.gradient(batched_x, batched_y)
                     if not self.momentum:
