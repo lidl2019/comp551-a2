@@ -3,21 +3,21 @@
     "momentum": 0.9995,
     "lr": 0.0003,
     "epochs": 3000000,
-    "training accuracy": 0.785,
-    "validation accuracy": 0.75
+    "training accuracy": 0.765,
+    "validation accuracy": 0.69
   }
 }{
   "model 0": {
     "momentum": 0.9995,
     "lr": 0.0003,
     "epochs": 3000000,
-    "training accuracy": 0.785,
-    "validation accuracy": 0.75
+    "training accuracy": 0.765,
+    "validation accuracy": 0.69
   },
   "model 1": {
     "momentum": 0.9999,
     "lr": 0.0003,
-    "epochs": 3000000,
+    "epochs": 2169637,
     "training accuracy": 0.7866666666666666,
     "validation accuracy": 0.75
   }
@@ -26,73 +26,73 @@
     "momentum": 0.9995,
     "lr": 0.0003,
     "epochs": 3000000,
-    "training accuracy": 0.785,
-    "validation accuracy": 0.75
+    "training accuracy": 0.765,
+    "validation accuracy": 0.69
   },
   "model 1": {
     "momentum": 0.9999,
     "lr": 0.0003,
-    "epochs": 3000000,
-    "training accuracy": 0.7866666666666666,
-    "validation accuracy": 0.75
-  },
-  "model 2": {
-    "momentum": 0.99995,
-    "lr": 0.0003,
-    "epochs": 3000000,
-    "training accuracy": 0.78,
-    "validation accuracy": 0.76
-  }
-}{
-  "model 0": {
-    "momentum": 0.9995,
-    "lr": 0.0003,
-    "epochs": 3000000,
-    "training accuracy": 0.785,
-    "validation accuracy": 0.75
-  },
-  "model 1": {
-    "momentum": 0.9999,
-    "lr": 0.0003,
-    "epochs": 3000000,
+    "epochs": 2169637,
     "training accuracy": 0.7866666666666666,
     "validation accuracy": 0.75
   },
   "model 2": {
     "momentum": 0.99995,
     "lr": 0.0003,
+    "epochs": 1554668,
+    "training accuracy": 0.7866666666666666,
+    "validation accuracy": 0.75
+  }
+}{
+  "model 0": {
+    "momentum": 0.9995,
+    "lr": 0.0003,
     "epochs": 3000000,
-    "training accuracy": 0.78,
-    "validation accuracy": 0.76
+    "training accuracy": 0.765,
+    "validation accuracy": 0.69
+  },
+  "model 1": {
+    "momentum": 0.9999,
+    "lr": 0.0003,
+    "epochs": 2169637,
+    "training accuracy": 0.7866666666666666,
+    "validation accuracy": 0.75
+  },
+  "model 2": {
+    "momentum": 0.99995,
+    "lr": 0.0003,
+    "epochs": 1554668,
+    "training accuracy": 0.7866666666666666,
+    "validation accuracy": 0.75
   },
   "model 3": {
     "momentum": 0.99999,
     "lr": 0.0003,
-    "epochs": 3000000,
-    "training accuracy": 0.7866666666666666,
-    "validation accuracy": 0.76
+    "epochs": 301936,
+    "training accuracy": 0.785,
+    "validation accuracy": 0.75
   }
 }{
   "model 0": {
     "momentum": 0.9,
     "lr": 0.0003,
     "epochs": 3000000,
-    "training accuracy": 0.7833333333333333,
-    "validation accuracy": 0.74
+    "training accuracy": 0.7566666666666667,
+    "validation accuracy": 0.72
   }
 }{
   "model 0": {
     "momentum": 0.9,
     "lr": 0.0003,
     "epochs": 3000000,
-    "training accuracy": 0.7833333333333333,
-    "validation accuracy": 0.74
+    "training accuracy": 0.7566666666666667,
+    "validation accuracy": 0.72
   },
   "model 1": {
     "momentum": 0.999,
     "lr": 0.0003,
     "epochs": 3000000,
-    "training accuracy": 0.7866666666666666,
-    "validation accuracy": 0.75
+    "training accuracy": 0.75,
+    "validation accuracy": 0.72
   }
 }
