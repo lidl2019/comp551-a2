@@ -12,7 +12,7 @@ class LogisticRegression(object):
                  momentum=0,
                  reset_each_time = True,
                  penalty=None,
-                 lambdaa=1,
+                 lambdaa=0.1,
                  record=False,
                  record_step=1000,
                  ):
@@ -172,6 +172,15 @@ class LogisticRegression(object):
         res = np.array(yh >= 0.5, dtype='int')
         # print(res)
         return res
+
+    def predict_prob(self,x):
+        if x.ndim == 1:
+            x = x[:, None]
+        Nt = x.shape[0]
+        if self.theta.shape[0] != x.shape[1]:
+            x = np.column_stack([x, np.ones(Nt)])
+        yh = logistic(np.dot(x, self.theta))  # predict output
+        return yh
 
     def R_square_score(self, X_test, y_test):
         return R_square(y_test, self.predict(X_test))

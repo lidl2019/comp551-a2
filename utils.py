@@ -166,3 +166,69 @@ def grid_search_pipelines(train: np.ndarray,
         searched_params[name] = best_params
 
     return best_pipeline, best_score, searched_params, pipeline_scores
+
+
+def save_processed_data(train: np.ndarray,
+                        val: np.ndarray,
+                        pipelines: Dict[str, Tuple[Pipeline, Vectorizer]],
+                        dir: str) -> None:
+    """
+    Save processed training and validation sets by different pipelines
+    :param train: the training set
+    :param val: the validation set
+    :param pipelines: the preprocessing pipelines
+    :param dir: directory name to store processed training and validation sets
+    :return: None
+    """
+    for name, (pipeline, vectorizer) in pipelines.items():
+        train_processed, val_processed = preprocess(train, val, pipeline, vectorizer)
+        np.savez_compressed(dir + '/' + name, train = train_processed, val = val_processed)
+    return
+
+
+def read_processed_data(pipeline_name: str, dir: str) -> Tuple[np.array, np.array]:
+    """
+    Load preprocessed training and validation sets
+    :param pipeline_name: the original name of the pipeline
+    :param dir: the directory name of processed training and validation sets
+    :return:
+    """
+    loaded = np.load(dir + '/' + pipeline_name + ".npz")
+    return loaded["train"], loaded["val"]
+
+
+def grid_search_processed_data(pipelines: Dict[str, Tuple[Pipeline, Vectorizer]],
+                               dir: str,
+                               param_spaces: List[Dict[str, List[Any]]],
+                               measure: Callable[[np.ndarray, np.ndarray], float],
+                               search_method = Any,
+                               verbose: bool = False
+                               ) -> Tuple[Optional[str], float, Dict[str, Dict[str, Any]], Dict[str, Any]]:
+    """
+    Compare preprocessing pipelines using grid search
+    :param pipelines: the original pipelines used to store files
+    :param dir: the directory name of processed training and validation sets
+    :param param_spaces: the ranges of hyperparameters for the logistic regression model
+    :param measure: the measure used for comparing. The higher, the better.
+    :param search_method: the function used to search over parameter ranges
+    :param verbose: whether to print messages
+    :return: A four tuple. The first is the name of the best pipeline, and the second is its score. The third is the
+    best hyperparameters for each pipeline. The fourth is the best score for each pipeline
+    """
+    best_score = float('-inf')
+    best_pipeline = None
+    searched_params = {}
+    pipeline_scores = {}
+    for name in pipelines:
+        train_processed, val_processed = read_processed_data(name, dir)
+        best_params, score, models = search_method(train_processed, val_processed, param_spaces, measure)
+        if score > best_score:
+            best_score = score
+            best_pipeline = name
+        if verbose:
+            print(f"Pipeline: {name}, score: {score}, params: {best_params}")
+        pipeline_scores[name] = score
+        searched_params[name] = best_params
+
+    return best_pipeline, best_score, searched_params, pipeline_scores
+
