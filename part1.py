@@ -147,7 +147,7 @@ def q2to4(param_name: str,
                                                      val=val_processed,
                                                      param_spaces=spaces,
                                                      measure=accuracy,
-                                                     verbose=True)
+                                                     verbose=False)
 
     content = {}
     for i, (_, model) in enumerate(models):
@@ -189,7 +189,7 @@ def q2to4(param_name: str,
                 "validation accuracy": val_acc[-1]
             }
             js = json.dumps(content, indent=2)
-            with open(fname_performance, 'w') as f:
+            with open(fname_performance, 'a') as f:
                 f.write(js)
         if verbose:
             print(f"model with {param_name} {getattr(model, param_name)}:")
@@ -207,34 +207,69 @@ def q4(small_size, large_size, f_json = None, f_img = None):
 
 
 if __name__=='__main__':
-    # question1
-    # params = {'max_epoch': 1,
+    # region question1
+    # lrs = [0.0002, 0.0003, 0.0004]
+    # for lr in lrs:
+    #     params = {'max_epoch': 10000000,
+    #               'learning_rate': lr,
+    #               'batch_size': float('inf'),
+    #               'momentum': 0,
+    #               'record': True,
+    #               }
+    #     im1 = f"results/1.1/epoch_vs_acc_lr={lr}.jpg"
+    #     im2 = f"results/1.1/epoch_vs_grad_lr={lr}.jpg"
+    #     clf = q1(params, 101, f_img1=im1, f_img2=im2)
+    # endregion
+
+    # params = {'max_epoch': 3000000,
     #           'learning_rate': 0.0003,
     #           'batch_size': float('inf'),
-    #           'momentum': 0,
+    #           'momentum': 0.9999,
     #           'record': True,
     #           }
-    # im1 = "results/1.1/epoch_vs_acc.jpg"
-    # im2 = "results/1.1/epoch_vs_grad.jpg"
-    #
-    # clf = q1(params, 101, f_img1=None, f_img2=None)
-    # # endregion
 
-    params = {'max_epoch': 3000000,
+    # region question2
+    # batch_sizes = [128]
+    # acc_names2 = [f"results/1.2/acc-{i}.jpg" for i in batch_sizes]
+    # grad_names2 = [f"results/1.2/norm-{i}.jpg" for i in batch_sizes]
+    # perf_name2 = "results/1.2/performance.json"
+    # models2 = q2to4("batch_size", batch_sizes, params, 1001, acc_names2, grad_names2, perf_name2)
+    # endregion
+
+    # region question3
+    # momentums = [0.9995, 0.9999, 0.99995, 0.99999]
+    # acc_names3 = [f"results/1.3/acc-{i}.jpg" for i in momentums]
+    # grad_names3 = [f"results/1.3/norm-{i}.jpg" for i in momentums]
+    # perf_name3 = "results/1.3/performance.json"
+    # models3 = q2to4("momentum", momentums, params, 1001, acc_names3, grad_names3, perf_name3)
+    # endregion
+
+    params_small = {'max_epoch': 3000000,
               'learning_rate': 0.0003,
-              'batch_size': float('inf'),
+              'batch_size': 8,
               'momentum': 0,
               'record': True,
               }
 
-    # question2
-    batch_sizes = [8, 16, 32, 64, 128, 256]
-    acc_names2 = [f"results/1.2/acc-{i}.jpg" for i in batch_sizes]
-    grad_names2 = [f"results/1.2/norm-{i}.jpg" for i in batch_sizes]
-    perf_name2 = "results/1.2/performance.json"
-    models2 = q2to4("batch_size", batch_sizes, params, 1001, acc_names2, grad_names2, perf_name2)
+    # region question3
+    momentums = [0.9, 0.999]
+    acc_names4 = [f"results/1.4/small/acc-{i}.jpg" for i in momentums]
+    grad_names4 = [f"results/1.4/small/norm-{i}.jpg" for i in momentums]
+    perf_name4 = "results/1.4/small/performance.json"
+    models4 = q2to4("momentum", momentums, params_small, 1001, acc_names4, grad_names4, perf_name4)
+    # endregion
 
-    # # question3
-    # models3 = q2to4("momentum", range, params, 1001, acc_names, grad_names, perf_name)
+    # params_large = {'max_epoch': 3000000,
+    #                 'learning_rate': 0.0003,
+    #                 'batch_size': 256,
+    #                 'momentum': 0,
+    #                 'record': True,
+    #                 }
     #
-    #
+    # # region question3
+    # momentums = [0.9, 0.999]
+    # acc_names4 = [f"results/1.4/large/acc-{i}.jpg" for i in momentums]
+    # grad_names4 = [f"results/1.4/large/norm-{i}.jpg" for i in momentums]
+    # perf_name4 = "results/1.4/large/performance.json"
+    # models4 = q2to4("momentum", momentums, params_large, 1001, acc_names4, grad_names4, perf_name4)
+    # # endregion
