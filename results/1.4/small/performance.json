@@ -95,4 +95,28 @@
     "training accuracy": 0.75,
     "validation accuracy": 0.72
   }
+}{
+  "model 0": {
+    "momentum": 0.999,
+    "lr": 0.0003,
+    "epochs": 3000000,
+    "training accuracy": 0.7116666666666667,
+    "validation accuracy": 0.67
+  }
+}{
+  "model 0": {
+    "momentum": 0.99999,
+    "lr": 0.0003,
+    "epochs": 215238,
+    "training accuracy": 0.785,
+    "validation accuracy": 0.75
+  }
+}{
+  "model 0": {
+    "momentum": 0.99999,
+    "lr": 0.0003,
+    "epochs": 3000000,
+    "training accuracy": 0.7866666666666666,
+    "validation accuracy": 0.75
+  }
 }
