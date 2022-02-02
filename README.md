@@ -1,4 +1,4 @@
-# comp551-p2-g66
+# comp551
 
 COMP 551, second project, group 66.
 
